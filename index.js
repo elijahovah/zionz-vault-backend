@@ -1,53 +1,19 @@
-require("dotenv").config();
-const express = require("express");
-const multer = require("multer");
-const { google } = require("googleapis");
-const fs = require("fs");
-const cors = require("cors");
+const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 3001;
+
 app.use(cors());
+app.use(express.json());
 
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI
-);
-
-oauth2Client.setCredentials({
-  refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+app.get('/', (req, res) => {
+  res.send('Zionz Vault Backend is Live!');
 });
 
-const drive = google.drive({ version: "v3", auth: oauth2Client });
-
-const upload = multer({ dest: "uploads/" });
-
-app.post("/upload", upload.single("file"), async (req, res) => {
-  try {
-    const fileMetadata = {
-      name: req.file.originalname,
-      parents: [process.env.DRIVE_FOLDER_ID],
-    };
-
-    const media = {
-      mimeType: req.file.mimetype,
-      body: fs.createReadStream(req.file.path),
-    };
-
-    const response = await drive.files.create({
-      resource: fileMetadata,
-      media: media,
-      fields: "id",
-    });
-
-    fs.unlinkSync(req.file.path); // Clean up uploaded file
-    res.status(200).send(`File uploaded successfully. File ID: ${response.data.id}`);
-  } catch (error) {
-    console.error("Upload error:", error.message);
-    res.status(500).send("Failed to upload file.");
-  }
-});
-
-app.listen(3000, () => {
-  console.log("🚀 Server running at http://localhost:3000");
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
